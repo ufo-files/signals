@@ -94,17 +94,35 @@ class Logger:
         if self.process and self.process.poll() is None:
             self.process.terminate()
 
+    @staticmethod
+    def append_record(path: Path, record: dict) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as output:
+            output.write(json.dumps(record, separators=(",", ":")) + "\n")
+            output.flush()
+            os.fsync(output.fileno())
+
     def flush(self) -> None:
         if not any(self.accumulator.counts):
             return
         record = self.accumulator.record(self.args.threshold_db)
         hour = self.accumulator.minute.strftime("%Y-%m-%dT%H")
         path = self.args.output / "data" / self.accumulator.minute.strftime("%Y/%m/%d") / f"{hour}.jsonl"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as output:
-            output.write(json.dumps(record, separators=(",", ":")) + "\n")
-            output.flush()
-            os.fsync(output.fileno())
+        self.append_record(path, record)
+        if record["detections"]:
+            significant_path = (
+                self.args.output / "significant" / self.accumulator.minute.strftime("%Y/%m/%d") / f"{hour}.jsonl"
+            )
+            significant_record = {
+                "schema": record["schema"],
+                "minute_utc": record["minute_utc"],
+                "range_hz": record["range_hz"],
+                "bin_width_hz": record["bin_width_hz"],
+                "noise_floor_db": record["noise_floor_db"],
+                "sweep_rows": record["sweep_rows"],
+                "detections": record["detections"],
+            }
+            self.append_record(significant_path, significant_record)
 
     def run(self) -> int:
         command = [
