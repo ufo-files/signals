@@ -9,6 +9,11 @@ Each JSONL record describes one UTC minute at 100 kHz resolution:
 - contiguous detections at least 12 dB above that floor;
 - sample counts and sweep-row counts for coverage auditing.
 
+Minutes containing threshold detections are also copied in compact form to
+`significant/YYYY/MM/DD/YYYY-MM-DDTHH.jsonl`. These records omit the full power
+arrays and retain the noise floor plus detected frequency ranges, peaks, and
+strength above the floor for quick review.
+
 The active and queued files live outside the Git checkout in
 `/home/hackrf/signal-spool/data/YYYY/MM/DD/YYYY-MM-DDTHH.jsonl`. Shortly after
 10 minutes past every UTC hour, each completed hour is published oldest-first
@@ -16,7 +21,8 @@ on its own branch and merged through a GitHub pull request. The publisher
 fetches `origin/main` and verifies the merged file's SHA-256 before deleting its
 local spool copy. A network, authentication, push, or merge failure leaves the
 local file untouched; later hours continue logging and the next timer run
-retries the full backlog. Raw IQ and audio are deliberately not recorded.
+retries both the complete and significant-only backlogs. Raw IQ and audio are
+deliberately not recorded.
 
 ## Operations
 

@@ -18,10 +18,15 @@ git fetch origin
 
 queue="$(mktemp)"
 trap 'rm -f -- "$queue"' EXIT HUP INT TERM
-find "$SPOOL/data" -type f -name '*.jsonl' ! -name "${current_hour}.jsonl" -print 2>/dev/null | sort >"$queue"
+for archive in data significant; do
+    if [ -d "$SPOOL/$archive" ]; then
+        find "$SPOOL/$archive" -type f -name '*.jsonl' ! -name "${current_hour}.jsonl" -print
+    fi
+done | sort >"$queue"
 
 while IFS= read -r source; do
     relative="${source#"$SPOOL/"}"
+    archive="${relative%%/*}"
     period="$(basename "$source" .jsonl)"
     local_hash="$(sha256sum "$source" | awk '{print $1}')"
 
@@ -47,15 +52,15 @@ while IFS= read -r source; do
     cp -- "$source" "$relative"
     git add -- "$relative"
     if ! git diff --cached --quiet; then
-        git commit -m "Add signal log for $period UTC"
+        git commit -m "Add $archive signal log for $period UTC"
     fi
     git push -u origin "$branch"
 
     pr="$(gh pr list --repo ufo-files/signals --head "$branch" --state open --json number --jq '.[0].number // empty')"
     if [ -z "$pr" ]; then
         pr="$(gh pr create --repo ufo-files/signals --base main --head "$branch" \
-            --title "Add signal log for $period UTC" \
-            --body "Automated UTC HackRF spectrum archive for $period." | sed 's#.*/##')"
+            --title "Add $archive signal log for $period UTC" \
+            --body "Automated UTC HackRF $archive archive for $period." | sed 's#.*/##')"
     fi
     gh pr merge "$pr" --repo ufo-files/signals --merge --delete-branch
 
@@ -69,6 +74,6 @@ while IFS= read -r source; do
     rm -f -- "$source"
 done <"$queue"
 
-find "$SPOOL/data" -depth -type d -empty -delete 2>/dev/null || true
+find "$SPOOL/data" "$SPOOL/significant" -depth -type d -empty -delete 2>/dev/null || true
 git switch main
 git pull --ff-only origin main
