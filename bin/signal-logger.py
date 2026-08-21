@@ -123,7 +123,10 @@ class Logger:
                 self.accumulator = MinuteAccumulator(now_minute, self.args.low_hz, self.args.high_hz, self.args.bin_width)
             fields = [field.strip() for field in line.split(",")]
             try:
-                row_low, row_high, row_width = int(fields[2]), int(fields[3]), int(fields[4])
+                # hackrf_sweep formats bin width as a decimal (for example
+                # "100000.00") even when it represents a whole number.
+                row_low, row_high = int(fields[2]), int(fields[3])
+                row_width = int(float(fields[4]))
                 powers = [float(value) for value in fields[6:] if value]
             except (IndexError, ValueError):
                 continue
