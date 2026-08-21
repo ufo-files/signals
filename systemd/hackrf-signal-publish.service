@@ -1,0 +1,10 @@
+[Unit]
+Description=Publish completed HackRF signal logs to GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=hackrf
+Group=hackrf
+ExecStart=/usr/local/libexec/hackrf-signal-publish
