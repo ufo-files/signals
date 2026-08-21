@@ -1,8 +1,8 @@
 [Unit]
-Description=Publish HackRF signal logs daily
+Description=Publish completed HackRF signal logs hourly
 
 [Timer]
-OnCalendar=*-*-* 00:10:00 UTC
+OnCalendar=*-*-* *:10:00 UTC
 Persistent=true
 RandomizedDelaySec=5m
 Unit=hackrf-signal-publish.service
