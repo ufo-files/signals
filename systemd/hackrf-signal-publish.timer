@@ -1,0 +1,11 @@
+[Unit]
+Description=Publish HackRF signal logs daily
+
+[Timer]
+OnCalendar=*-*-* 00:10:00 UTC
+Persistent=true
+RandomizedDelaySec=5m
+Unit=hackrf-signal-publish.service
+
+[Install]
+WantedBy=timers.target

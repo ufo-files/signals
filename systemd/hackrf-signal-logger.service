@@ -1,0 +1,18 @@
+[Unit]
+Description=Continuous HackRF signal spectrum logger
+After=local-fs.target
+Conflicts=openwebrx.service
+
+[Service]
+Type=simple
+User=hackrf
+Group=hackrf
+ExecStart=/usr/local/libexec/hackrf-signal-logger
+Restart=always
+RestartSec=5
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
