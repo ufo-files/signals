@@ -98,8 +98,8 @@ class Logger:
         if not any(self.accumulator.counts):
             return
         record = self.accumulator.record(self.args.threshold_db)
-        day = self.accumulator.minute.strftime("%Y-%m-%d")
-        path = self.args.output / "data" / self.accumulator.minute.strftime("%Y/%m") / f"{day}.jsonl"
+        hour = self.accumulator.minute.strftime("%Y-%m-%dT%H")
+        path = self.args.output / "data" / self.accumulator.minute.strftime("%Y/%m/%d") / f"{hour}.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as output:
             output.write(json.dumps(record, separators=(",", ":")) + "\n")

@@ -3,6 +3,8 @@ import importlib.util
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 
 SPEC = importlib.util.spec_from_file_location("signal_logger", Path(__file__).parents[1] / "bin" / "signal-logger.py")
@@ -19,6 +21,23 @@ class MinuteAccumulatorTest(unittest.TestCase):
         record = accumulator.record(12)
         self.assertEqual(100, len(record["average_db"]))
         self.assertEqual(1_600_050_000, record["detections"][0]["peak_hz"])
+
+    def test_flush_uses_hourly_utc_path(self):
+        with TemporaryDirectory() as directory:
+            args = SimpleNamespace(
+                output=Path(directory), low_hz=1_595_000_000,
+                high_hz=1_605_000_000, bin_width=100_000,
+                threshold_db=12, lna_gain=24, vga_gain=20, amp=False,
+            )
+            logger = MODULE.Logger(args)
+            logger.accumulator = MODULE.MinuteAccumulator(
+                datetime(2026, 8, 21, 23, 42, tzinfo=timezone.utc),
+                args.low_hz, args.high_hz, args.bin_width,
+            )
+            logger.accumulator.add(args.low_hz, args.bin_width, [-80.0] * 100)
+            logger.flush()
+            expected = Path(directory) / "data/2026/08/21/2026-08-21T23.jsonl"
+            self.assertTrue(expected.is_file())
 
 
 if __name__ == "__main__":

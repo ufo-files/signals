@@ -9,7 +9,7 @@ exec 9>"$LOCK"
 flock -n 9 || exit 0
 
 cd "$REPO"
-today="$(date -u +%Y-%m-%d)"
+current_hour="$(date -u +%Y-%m-%dT%H)"
 
 # A network or GitHub failure exits without touching the spool. The next timer
 # run starts with the oldest completed day, so an offline backlog drains in
@@ -18,11 +18,11 @@ git fetch origin
 
 queue="$(mktemp)"
 trap 'rm -f -- "$queue"' EXIT HUP INT TERM
-find "$SPOOL/data" -type f -name '*.jsonl' ! -name "${today}.jsonl" -print 2>/dev/null | sort >"$queue"
+find "$SPOOL/data" -type f -name '*.jsonl' ! -name "${current_hour}.jsonl" -print 2>/dev/null | sort >"$queue"
 
 while IFS= read -r source; do
     relative="${source#"$SPOOL/"}"
-    day="$(basename "$source" .jsonl)"
+    period="$(basename "$source" .jsonl)"
     local_hash="$(sha256sum "$source" | awk '{print $1}')"
 
     git fetch origin
@@ -36,7 +36,7 @@ while IFS= read -r source; do
         exit 1
     fi
 
-    branch="archive/${day}-${local_hash%${local_hash#????????????}}"
+    branch="archive/${period}-${local_hash%${local_hash#????????????}}"
     if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
         git switch -C "$branch" "origin/$branch"
     else
@@ -47,15 +47,15 @@ while IFS= read -r source; do
     cp -- "$source" "$relative"
     git add -- "$relative"
     if ! git diff --cached --quiet; then
-        git commit -m "Add signal log for $day"
+        git commit -m "Add signal log for $period UTC"
     fi
     git push -u origin "$branch"
 
     pr="$(gh pr list --repo ufo-files/signals --head "$branch" --state open --json number --jq '.[0].number // empty')"
     if [ -z "$pr" ]; then
         pr="$(gh pr create --repo ufo-files/signals --base main --head "$branch" \
-            --title "Add signal log for $day" \
-            --body "Automated UTC HackRF spectrum archive for $day." | sed 's#.*/##')"
+            --title "Add signal log for $period UTC" \
+            --body "Automated UTC HackRF spectrum archive for $period." | sed 's#.*/##')"
     fi
     gh pr merge "$pr" --repo ufo-files/signals --merge --delete-branch
 
