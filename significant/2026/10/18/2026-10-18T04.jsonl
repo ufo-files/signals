@@ -1,0 +1,1 @@
+{"schema":1,"minute_utc":"2026-10-18T04:59:00Z","range_hz":[1590000000,1610000000],"bin_width_hz":100000,"noise_floor_db":-82.9,"sweep_rows":539,"detections":[{"low_hz":1590000000,"high_hz":1610000000,"peak_hz":1596250000,"peak_db":-56.0,"above_floor_db":26.9}],"measurement_source":"openwebrx_fft"}
